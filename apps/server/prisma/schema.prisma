@@ -1,0 +1,229 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                     String          @id @default(uuid())
+  email                  String          @unique
+  password               String
+  firstName              String          @map("first_name")
+  lastName               String          @map("last_name")
+  role                   UserRole        @default(USER)
+  status                 UserStatus      @default(PENDING_VERIFICATION)
+  avatar                 String?
+  emailVerifiedAt        DateTime?       @map("email_verified_at")
+  emailVerificationToken String?         @map("email_verification_token")
+  passwordResetToken     String?         @map("password_reset_token")
+  passwordResetExpiresAt DateTime?       @map("password_reset_expires_at")
+  refreshToken           String?         @map("refresh_token")
+  lastLoginAt            DateTime?       @map("last_login_at")
+  createdAt              DateTime        @default(now()) @map("created_at")
+  updatedAt              DateTime        @updatedAt @map("updated_at")
+  auditLogs              AuditLog[]
+  searchHistories        SearchHistory[]
+
+  @@index([email])
+  @@index([role])
+  @@index([status])
+  @@map("users")
+}
+
+model Business {
+  id              String           @id @default(uuid())
+  name            String
+  category        BusinessCategory @default(OTHER)
+  description     String?
+  ownerName       String?          @map("owner_name")
+  services        String[]
+  foundedYear     Int?             @map("founded_year")
+  employeeCount   String?          @map("employee_count")
+  address         String
+  city            String
+  state           String
+  country         String           @default("US")
+  postalCode      String?          @map("postal_code")
+  lat             Float?
+  lng             Float?
+  phone           String?
+  email           String?
+  website         String?
+  googlePlaceId   String?          @unique @map("google_place_id")
+  rating          Float?
+  reviewCount     Int?             @map("review_count")
+  priceLevel      Int?             @map("price_level")
+  isVerified      Boolean          @default(false) @map("is_verified")
+  openingHours    Json?            @map("opening_hours")
+  photos          String[]
+  types           String[]
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  analyses        Analysis[]
+  recommendations Recommendation[]
+  searchHistories SearchHistory[]  @relation("SearchHistoryBusinesses")
+
+  @@index([name])
+  @@index([city])
+  @@index([state])
+  @@index([category])
+  @@index([googlePlaceId])
+  @@index([rating])
+  @@map("businesses")
+}
+
+model Analysis {
+  id                        String          @id @default(uuid())
+  businessId                String          @map("business_id")
+  status                    AnalysisStatus  @default(PENDING)
+  hasWebsite                Boolean         @default(false) @map("has_website")
+  websiteUrl                String?         @map("website_url")
+  hasHttps                  Boolean         @default(false) @map("has_https")
+  hasContactPage            Boolean         @default(false) @map("has_contact_page")
+  hasBookingPage            Boolean         @default(false) @map("has_booking_page")
+  hasMobileOptimization     Boolean         @default(false) @map("has_mobile_optimization")
+  hasAnalytics              Boolean         @default(false) @map("has_analytics")
+  hasSocialProof            Boolean         @default(false) @map("has_social_proof")
+  pageLoadScore             Int             @default(0) @map("page_load_score")
+  contentQualityScore       Int             @default(0) @map("content_quality_score")
+  websiteScore              Int             @default(0) @map("website_score")
+  needsAppointmentBooking   Boolean         @default(false) @map("needs_appointment_booking")
+  needsLeadManagement       Boolean         @default(false) @map("needs_lead_management")
+  needsInventoryManagement  Boolean         @default(false) @map("needs_inventory_management")
+  needsCustomerFollowUp     Boolean         @default(false) @map("needs_customer_follow_up")
+  needsInvoicing            Boolean         @default(false) @map("needs_invoicing")
+  needsReporting            Boolean         @default(false) @map("needs_reporting")
+  manualWorkflowCount       Int             @default(0) @map("manual_workflow_count")
+  automationScore           Int             @default(0) @map("automation_score")
+  needsCustomerSupport      Boolean         @default(false) @map("needs_customer_support")
+  needsFaqAutomation        Boolean         @default(false) @map("needs_faq_automation")
+  needsLeadQualification    Boolean         @default(false) @map("needs_lead_qualification")
+  needsAppointmentBot       Boolean         @default(false) @map("needs_appointment_bot")
+  needsReviewManagement     Boolean         @default(false) @map("needs_review_management")
+  customerInteractionVolume String          @default("LOW") @map("customer_interaction_volume")
+  aiScore                   Int             @default(0) @map("ai_score")
+  finalScore                Int             @default(0) @map("final_score")
+  priorityLevel             PriorityLevel   @default(LOW) @map("priority_level")
+  opportunityTypes          String[]        @map("opportunity_types")
+  errorMessage              String?         @map("error_message")
+  analyzedAt                DateTime?       @map("analyzed_at")
+  createdAt                 DateTime        @default(now()) @map("created_at")
+  updatedAt                 DateTime        @updatedAt @map("updated_at")
+  business                  Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  recommendation            Recommendation?
+
+  @@index([businessId])
+  @@index([status])
+  @@index([finalScore])
+  @@index([priorityLevel])
+  @@map("analyses")
+}
+
+model Recommendation {
+  id                  String    @id @default(uuid())
+  businessId          String    @map("business_id")
+  analysisId          String    @unique @map("analysis_id")
+  primaryOpportunity  String    @map("primary_opportunity")
+  recommendations     Json
+  totalEstimatedValue String    @map("total_estimated_value")
+  notes               String?
+  isActioned          Boolean   @default(false) @map("is_actioned")
+  actionedAt          DateTime? @map("actioned_at")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+  analysis            Analysis  @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  business            Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([primaryOpportunity])
+  @@index([isActioned])
+  @@map("recommendations")
+}
+
+model SearchHistory {
+  id           String     @id @default(uuid())
+  userId       String     @map("user_id")
+  query        String
+  location     String?
+  radius       Int?
+  category     String?
+  resultsCount Int        @default(0) @map("results_count")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businesses   Business[] @relation("SearchHistoryBusinesses")
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("search_histories")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id")
+  action    String
+  entity    String
+  entityId  String?  @map("entity_id")
+  oldValue  Json?    @map("old_value")
+  newValue  Json?    @map("new_value")
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([entity])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+  ANALYST
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  PENDING_VERIFICATION
+}
+
+enum BusinessCategory {
+  RESTAURANT
+  RETAIL
+  HEALTHCARE
+  BEAUTY_SALON
+  FITNESS
+  LEGAL
+  ACCOUNTING
+  REAL_ESTATE
+  AUTOMOTIVE
+  CONSTRUCTION
+  EDUCATION
+  HOSPITALITY
+  FINANCIAL_SERVICES
+  CONSULTING
+  TECHNOLOGY
+  MANUFACTURING
+  LOGISTICS
+  OTHER
+}
+
+enum AnalysisStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+enum PriorityLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}

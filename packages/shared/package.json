@@ -1,0 +1,21 @@
+{
+  "name": "@boi/shared",
+  "version": "1.0.0",
+  "description": "Shared types, utilities, and constants for Business Opportunity Intelligence Platform",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "lint": "eslint src --ext .ts",
+    "clean": "rimraf dist"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.7",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "zod": "^3.23.4"
+  }
+}

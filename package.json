@@ -1,0 +1,25 @@
+{
+  "name": "business-opportunity-platform",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:web\"",
+    "dev:server": "npm run start:dev --workspace=apps/server",
+    "dev:web": "npm run dev --workspace=apps/web",
+    "build": "npm run build --workspace=packages/shared && npm run build --workspace=apps/server && npm run build --workspace=apps/web",
+    "start": "concurrently \"npm run start:prod --workspace=apps/server\" \"npm run start --workspace=apps/web\"",
+    "install:all": "npm install",
+    "prisma:generate": "npm run prisma:generate --workspace=apps/server",
+    "prisma:migrate": "npm run prisma:migrate --workspace=apps/server",
+    "prisma:seed": "npm run prisma:seed --workspace=apps/server",
+    "prisma:studio": "npm run prisma:studio --workspace=apps/server",
+    "setup": "npm install && npm run prisma:generate && echo 'Setup complete! Copy .env.example to apps/server/.env and fill in values, then run: npm run prisma:migrate && npm run prisma:seed && npm run dev'"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
