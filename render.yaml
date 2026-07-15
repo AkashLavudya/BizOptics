@@ -2,10 +2,15 @@ services:
   - type: web
     name: bizoptics-backend-api
     runtime: node
-    repo: https://github.com/your-username/your-repo-name # Replace with your repo
+    # ⬇️  Replace with your GitHub repo URL
+    repo: https://github.com/AkashLavudya/BizOptics
     branch: main
-    # Render builds from root to support shared workspace packages
-    buildCommand: npm install && npm run build --workspace=packages/shared && npx prisma generate --schema=apps/server/prisma/schema.prisma && npm run build --workspace=apps/server
+    # Build from repo root so npm workspaces can resolve packages/shared
+    buildCommand: >
+      npm install &&
+      npx prisma generate --schema=apps/server/prisma/schema.prisma &&
+      npm run build --workspace=packages/shared &&
+      npm run build --workspace=apps/server
     startCommand: node apps/server/dist/src/main.js
     envVars:
       - key: NODE_ENV
@@ -15,16 +20,40 @@ services:
       - key: API_PREFIX
         value: api/v1
       - key: DATABASE_URL
-        value: postgresql://username:password@hostname:5432/db # Replace with your Neon Database URL
+        # ⬇️  Replace with your Neon PostgreSQL connection string
+        value: postgresql://neondb_owner:xxxx@ep-xxx.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
       - key: JWT_SECRET
-        generateValue: true # Generates a random secure secret automatically
+        generateValue: true   # Render auto-generates a secure random value
       - key: JWT_REFRESH_SECRET
-        generateValue: true # Generates a random secure secret automatically
+        generateValue: true   # Render auto-generates a secure random value
       - key: JWT_EXPIRES_IN
         value: 8h
       - key: JWT_REFRESH_EXPIRES_IN
         value: 30d
       - key: CORS_ORIGINS
-        value: https://your-frontend-vercel-url.vercel.app # Replace with your Vercel URL
+        # ⬇️  Replace with your Vercel frontend URL (no trailing slash)
+        value: https://bizoptics.vercel.app
       - key: GOOGLE_PLACES_API_KEY
-        value: "" # Fill with your Google Places Key if applicable
+        value: ""              # Optional — leave blank to use mock data
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_SECURE
+        value: false
+      - key: SMTP_USER
+        value: ""              # ⬇️  Your Gmail address
+      - key: SMTP_PASS
+        value: ""              # ⬇️  Your Gmail App Password
+      - key: SMTP_FROM
+        value: "BizOptics <noreply@bizoptics.com>"
+      - key: BCRYPT_ROUNDS
+        value: 12
+      - key: THROTTLE_TTL
+        value: 60
+      - key: THROTTLE_LIMIT
+        value: 100
+      - key: ANALYSIS_TIMEOUT_MS
+        value: 10000
+      - key: LOG_LEVEL
+        value: warn
