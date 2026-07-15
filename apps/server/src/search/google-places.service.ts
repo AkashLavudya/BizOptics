@@ -644,6 +644,54 @@ export class GooglePlacesService {
         { city: 'Chattanooga', abbr: 'TN', lat: 35.045, lng: -85.309, areaCode: '423' },
         { city: 'Clarksville', abbr: 'TN', lat: 36.529, lng: -87.359, areaCode: '931' },
       ],
+      maharashtra: [
+        { city: 'Mumbai',    abbr: 'MH', lat: 19.076, lng: 72.877, areaCode: '022' },
+        { city: 'Pune',      abbr: 'MH', lat: 18.520, lng: 73.856, areaCode: '020' },
+        { city: 'Nagpur',    abbr: 'MH', lat: 21.145, lng: 79.088, areaCode: '0712' },
+        { city: 'Nashik',    abbr: 'MH', lat: 19.997, lng: 73.789, areaCode: '0253' },
+        { city: 'Thane',     abbr: 'MH', lat: 19.218, lng: 72.978, areaCode: '022' },
+      ],
+      delhi: [
+        { city: 'New Delhi', abbr: 'DL', lat: 28.613, lng: 77.209, areaCode: '011' },
+        { city: 'Noida',     abbr: 'UP', lat: 28.570, lng: 77.325, areaCode: '0120' },
+        { city: 'Gurgaon',   abbr: 'HR', lat: 28.459, lng: 77.026, areaCode: '0124' },
+        { city: 'Faridabad', abbr: 'HR', lat: 28.408, lng: 77.317, areaCode: '0129' },
+        { city: 'Ghaziabad', abbr: 'UP', lat: 28.669, lng: 77.453, areaCode: '0120' },
+      ],
+      karnataka: [
+        { city: 'Bengaluru', abbr: 'KA', lat: 12.971, lng: 77.594, areaCode: '080' },
+        { city: 'Mysuru',    abbr: 'KA', lat: 12.295, lng: 76.639, areaCode: '0821' },
+        { city: 'Hubballi',  abbr: 'KA', lat: 15.364, lng: 75.124, areaCode: '0836' },
+        { city: 'Mangaluru', abbr: 'KA', lat: 12.914, lng: 74.856, areaCode: '0824' },
+        { city: 'Belagavi',  abbr: 'KA', lat: 15.849, lng: 74.497, areaCode: '0831' },
+      ],
+      telangana: [
+        { city: 'Hyderabad',  abbr: 'TS', lat: 17.385, lng: 78.486, areaCode: '040' },
+        { city: 'Warangal',   abbr: 'TS', lat: 17.968, lng: 79.594, areaCode: '0870' },
+        { city: 'Nizamabad',  abbr: 'TS', lat: 18.672, lng: 78.094, areaCode: '08462' },
+        { city: 'Karimnagar', abbr: 'TS', lat: 18.438, lng: 79.128, areaCode: '0878' },
+        { city: 'Khammam',    abbr: 'TS', lat: 17.247, lng: 80.151, areaCode: '08742' },
+      ],
+      'tamil nadu': [
+        { city: 'Chennai',    abbr: 'TN', lat: 13.082, lng: 80.270, areaCode: '044' },
+        { city: 'Coimbatore', abbr: 'TN', lat: 11.016, lng: 76.955, areaCode: '0422' },
+        { city: 'Madurai',    abbr: 'TN', lat: 9.925,  lng: 78.119, areaCode: '0452' },
+        { city: 'Tiruchirappalli', abbr: 'TN', lat: 10.790, lng: 78.704, areaCode: '0431' },
+        { city: 'Salem',      abbr: 'TN', lat: 11.664, lng: 78.146, areaCode: '0427' },
+      ],
+      gujarat: [
+        { city: 'Ahmedabad', abbr: 'GJ', lat: 23.022, lng: 72.571, areaCode: '079' },
+        { city: 'Surat',     abbr: 'GJ', lat: 21.170, lng: 72.831, areaCode: '0261' },
+        { city: 'Vadodara',  abbr: 'GJ', lat: 22.307, lng: 73.181, areaCode: '0265' },
+        { city: 'Rajkot',    abbr: 'GJ', lat: 22.303, lng: 70.802, areaCode: '0281' },
+      ],
+      'west bengal': [
+        { city: 'Kolkata',   abbr: 'WB', lat: 22.572, lng: 88.363, areaCode: '033' },
+        { city: 'Howrah',    abbr: 'WB', lat: 22.595, lng: 88.263, areaCode: '033' },
+        { city: 'Durgapur',  abbr: 'WB', lat: 23.520, lng: 87.311, areaCode: '0343' },
+        { city: 'Siliguri',  abbr: 'WB', lat: 26.727, lng: 88.395, areaCode: '0353' },
+        { city: 'Asansol',   abbr: 'WB', lat: 23.673, lng: 86.952, areaCode: '0341' },
+      ],
     };
 
     // ── Map query to Google types and MOCK_NAMES key ────────────────────────

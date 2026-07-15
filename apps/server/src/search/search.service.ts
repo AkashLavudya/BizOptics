@@ -60,9 +60,9 @@ export class SearchService {
   // ─── Scan all categories for a state ────────────────────────────────────────
 
   async scan(userId: string, dto: ScanDto): Promise<ScanResult> {
-    const { state, city, limit = 60 } = dto;
+    const { country = 'United States', state, city, limit = 60 } = dto;
 
-    this.logger.log(`User ${userId} scanning state="${state}" city="${city}" limit=${limit}`);
+    this.logger.log(`User ${userId} scanning country="${country}" state="${state}" city="${city}" limit=${limit}`);
 
     const allSaved: any[] = [];
     const seenPlaceIds = new Set<string>();
@@ -75,7 +75,7 @@ export class SearchService {
       const batchResults = await Promise.allSettled(
         batch.map(async ({ query, label }) => {
           try {
-            const locationQuery = `${city}, ${state}`;
+            const locationQuery = `${city}, ${state}, ${country}`;
             const searchQuery = `${query} in ${locationQuery}`;
             const places = await this.googlePlacesService.searchPlaces(
               searchQuery,
@@ -128,8 +128,8 @@ export class SearchService {
       await this.prisma.searchHistory.create({
         data: {
           userId,
-          query: `Scan: ${city}, ${state}`,
-          location: `${city}, ${state}`,
+          query: `Scan: ${city}, ${state}, ${country}`,
+          location: `${city}, ${state}, ${country}`,
           resultsCount: allSaved.length,
         },
       });

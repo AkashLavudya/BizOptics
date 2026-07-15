@@ -12,19 +12,27 @@ import { toast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { timeAgo, downloadBlob } from '@/lib/utils';
 
-const US_STATES = [
-  'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado',
-  'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho',
-  'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana',
-  'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi',
-  'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey',
-  'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma',
-  'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota',
-  'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington',
-  'West Virginia', 'Wisconsin', 'Wyoming',
-];
+const COUNTRIES = ['United States', 'India'];
 
-const STATE_CITIES: Record<string, string[]> = {
+const STATES_BY_COUNTRY: Record<string, string[]> = {
+  'United States': [
+    'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado',
+    'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho',
+    'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana',
+    'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi',
+    'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey',
+    'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma',
+    'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota',
+    'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington',
+    'West Virginia', 'Wisconsin', 'Wyoming',
+  ],
+  'India': [
+    'Maharashtra', 'Delhi', 'Karnataka', 'Telangana', 'Tamil Nadu', 'Gujarat', 'West Bengal',
+  ],
+};
+
+const CITIES_BY_STATE: Record<string, string[]> = {
+  // US Cities
   'Alabama': ['Birmingham', 'Montgomery', 'Mobile', 'Huntsville', 'Tuscaloosa'],
   'Alaska': ['Anchorage', 'Juneau', 'Fairbanks', 'Sitka', 'Ketchikan'],
   'Arizona': ['Phoenix', 'Tucson', 'Mesa', 'Chandler', 'Scottsdale'],
@@ -44,7 +52,7 @@ const STATE_CITIES: Record<string, string[]> = {
   'Kentucky': ['Louisville', 'Lexington', 'Bowling Green', 'Owensboro', 'Covington'],
   'Louisiana': ['New Orleans', 'Baton Rouge', 'Shreveport', 'Lafayette', 'Lake Charles'],
   'Maine': ['Portland', 'Lewiston', 'Bangor', 'South Portland', 'Auburn'],
-  'Maryland': ['Baltimore', 'Annapolis', 'Frederick', 'Gaithersburg', 'Rockville'],
+  'Maryland': ['Baltimore', 'Annapolis', 'Frederick', 'Gaibersburg', 'Rockville'],
   'Massachusetts': ['Boston', 'Worcester', 'Springfield', 'Cambridge', 'Lowell'],
   'Michigan': ['Detroit', 'Grand Rapids', 'Warren', 'Sterling Heights', 'Ann Arbor'],
   'Minnesota': ['Minneapolis', 'St. Paul', 'Rochester', 'Duluth', 'Bloomington'],
@@ -74,7 +82,16 @@ const STATE_CITIES: Record<string, string[]> = {
   'Washington': ['Seattle', 'Spokane', 'Tacoma', 'Bellevue', 'Olympia'],
   'West Virginia': ['Charleston', 'Huntington', 'Morgantown', 'Parkersburg', 'Wheeling'],
   'Wisconsin': ['Milwaukee', 'Madison', 'Green Bay', 'Kenosha', 'Racine'],
-  'Wyoming': ['Cheyenne', 'Casper', 'Laramie', 'Gillette', 'Rock Springs']
+  'Wyoming': ['Cheyenne', 'Casper', 'Laramie', 'Gillette', 'Rock Springs'],
+
+  // India Cities
+  'Maharashtra': ['Mumbai', 'Pune', 'Nagpur', 'Nashik', 'Thane'],
+  'Delhi': ['New Delhi', 'Noida', 'Gurgaon', 'Faridabad', 'Ghaziabad'],
+  'Karnataka': ['Bengaluru', 'Mysuru', 'Hubballi', 'Mangaluru', 'Belagavi'],
+  'Telangana': ['Hyderabad', 'Warangal', 'Nizamabad', 'Karimnagar', 'Khammam'],
+  'Tamil Nadu': ['Chennai', 'Coimbatore', 'Madurai', 'Tiruchirappalli', 'Salem'],
+  'Gujarat': ['Ahmedabad', 'Surat', 'Vadodara', 'Rajkot'],
+  'West Bengal': ['Kolkata', 'Howrah', 'Durgapur', 'Siliguri', 'Asansol'],
 };
 
 const SCAN_CATEGORIES_DISPLAY = [
@@ -321,6 +338,7 @@ function BusinessCard({ biz, onAnalyze, analyzing }: { biz: any; onAnalyze: () =
 
 export default function ScanPage() {
   const queryClient = useQueryClient();
+  const [country, setCountry] = useState('United States');
   const [state, setState] = useState('');
   const [city, setCity] = useState('');
   const [stateInput, setStateInput] = useState('');
@@ -336,7 +354,7 @@ export default function ScanPage() {
   const [filterMinRating, setFilterMinRating] = useState(0);
   const [filterSearch, setFilterSearch] = useState('');
 
-  const filteredStates = US_STATES.filter(s =>
+  const filteredStates = (STATES_BY_COUNTRY[country] ?? []).filter(s =>
     s.toLowerCase().startsWith(stateInput.toLowerCase()) && stateInput.length > 0,
   ).slice(0, 8);
 
@@ -428,7 +446,7 @@ export default function ScanPage() {
     }
     setScanDone(false);
     setResults([]);
-    scanMutation.mutate({ state: target.trim(), city, limit: 60 });
+    scanMutation.mutate({ country, state: target.trim(), city, limit: 60 });
   };
 
   const selectState = (s: string) => {
@@ -464,7 +482,27 @@ export default function ScanPage() {
 
       {/* Scanner control panel */}
       <div className="bg-slate-900/80 border border-slate-800/50 rounded-2xl p-6">
-        <div className="grid sm:grid-cols-2 gap-4">
+        <div className="grid sm:grid-cols-3 gap-4">
+          {/* Country selector */}
+          <div>
+            <label className="block text-xs font-medium text-slate-400 mb-1.5">Target Country</label>
+            <select
+              value={country}
+              onChange={e => {
+                setCountry(e.target.value);
+                setState('');
+                setStateInput('');
+                setCity('');
+              }}
+              disabled={isScanning}
+              className="w-full px-3 py-3 bg-slate-800 border border-slate-700 rounded-xl text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+            >
+              {COUNTRIES.map(c => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+
           {/* State selector */}
           <div className="relative">
             <label className="block text-xs font-medium text-slate-400 mb-1.5">Target State</label>
@@ -484,8 +522,8 @@ export default function ScanPage() {
                   if (e.key === 'Enter') handleScan();
                   if (e.key === 'Escape') setShowSuggestions(false);
                 }}
-                placeholder="e.g. California, Texas, Florida..."
-                className="w-full pl-9 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                placeholder={country === 'India' ? "e.g. Maharashtra, Karnataka..." : "e.g. California, Texas..."}
+                className="w-full pl-9 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm disabled:opacity-50"
                 disabled={isScanning}
               />
               {showSuggestions && filteredStates.length > 0 && (
@@ -515,7 +553,7 @@ export default function ScanPage() {
               className="w-full px-3 py-3 bg-slate-800 border border-slate-700 rounded-xl text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
             >
               <option value="">{state ? 'Select City' : 'Select State First'}</option>
-              {(state ? STATE_CITIES[state] ?? [] : []).map(c => (
+              {(state ? CITIES_BY_STATE[state] ?? [] : []).map(c => (
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
@@ -713,12 +751,19 @@ export default function ScanPage() {
                     onClick={() => {
                       const loc = h.location ?? h.query?.replace('Scan: ', '') ?? '';
                       if (loc) {
-                        if (loc.includes(',')) {
-                          const parts = loc.split(',').map((p: string) => p.trim());
+                        const parts = loc.split(',').map((p: string) => p.trim());
+                        if (parts.length >= 3) {
+                          setCountry(parts[2]);
+                          setCity(parts[0]);
+                          setState(parts[1]);
+                          setStateInput(parts[1]);
+                        } else if (parts.length === 2) {
+                          setCountry('United States');
                           setCity(parts[0]);
                           setState(parts[1]);
                           setStateInput(parts[1]);
                         } else {
+                          setCountry('United States');
                           setState(loc);
                           setStateInput(loc);
                           setCity('');
