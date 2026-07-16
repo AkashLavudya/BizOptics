@@ -15,15 +15,4 @@ export class AppController {
       timestamp: new Date().toISOString(),
     };
   }
-
-  @Get('health')
-  @ApiOperation({ summary: 'Health Check (for uptime monitors)' })
-  @ApiResponse({ status: 200, description: 'Service is healthy.' })
-  healthCheck() {
-    return {
-      status: 'ok',
-      uptime: process.uptime(),
-      timestamp: new Date().toISOString(),
-    };
-  }
 }
