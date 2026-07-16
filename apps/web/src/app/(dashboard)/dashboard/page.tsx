@@ -1,10 +1,10 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { analyticsApi } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
-import { Building2, Globe, Cpu, Bot, ArrowUpRight } from 'lucide-react';
+import { Building2, Globe, Cpu, Bot, ArrowUpRight, Loader2 } from 'lucide-react';
 import { formatNumber, formatDate } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
@@ -57,12 +57,29 @@ function StatCard({ title, value, change, icon: Icon, color, loading }: any) {
 
 export default function DashboardPage() {
   const firstName = useAuthStore(s => s.user?.firstName);
+  const [isSlowLoading, setIsSlowLoading] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+
   const { data: raw, isLoading } = useQuery({
     queryKey: ['analytics'],
     queryFn: () => analyticsApi.getFull() as any,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
+    retry: 3,
+    retryDelay: 2000,
   });
+
+  // Show a "waking up" notice if the backend takes more than 3 seconds
+  useEffect(() => {
+    if (!isLoading) {
+      setIsSlowLoading(false);
+      setElapsed(0);
+      return;
+    }
+    const slowTimer = setTimeout(() => setIsSlowLoading(true), 3000);
+    const counter = setInterval(() => setElapsed(prev => prev + 1), 1000);
+    return () => { clearTimeout(slowTimer); clearInterval(counter); };
+  }, [isLoading]);
 
   // The axios interceptor returns response.data, so raw IS the payload directly.
   // API shape: { stats: {...}, businessesByCategory: [...], opportunitiesByType: [...],
@@ -109,6 +126,16 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* Cold-start wakeup banner */}
+      {isSlowLoading && (
+        <div className="flex items-center gap-3 px-5 py-3.5 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 text-sm">
+          <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+          <span>
+            <strong>Backend is starting up</strong> — Render free tier spins down after inactivity.
+            Waking it up now… <span className="opacity-60">({elapsed}s)</span>
+          </span>
+        </div>
+      )}
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
