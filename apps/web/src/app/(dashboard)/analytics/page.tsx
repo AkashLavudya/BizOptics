@@ -8,6 +8,7 @@ import { formatNumber, getScoreBg, formatDate } from '@/lib/utils';
 import { TrendingUp, Building2, BarChart3, Bot, RotateCcw, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 
 const AnalyticsCharts = dynamic(() => import('./AnalyticsCharts'), {
   ssr: false,
@@ -184,9 +185,19 @@ export default function AnalyticsPage() {
                       <tr key={i}><td colSpan={6} className="px-5 py-3"><Skeleton className="h-8 w-full" /></td></tr>
                     ))
                   : d.topOpportunities.slice(0, 10).map((biz: any, i: number) => (
-                      <tr key={biz.id}>
+                      <tr
+                        key={biz.id}
+                        className="cursor-pointer hover:bg-slate-800/60 transition-colors"
+                      >
                         <td className="px-5 py-3 text-slate-500">{i + 1}</td>
-                        <td className="px-5 py-3 font-medium text-white">{biz.name}</td>
+                        <td className="px-5 py-3 font-medium">
+                          <Link
+                            href={`/businesses/${biz.id}`}
+                            className="text-white hover:text-indigo-400 transition-colors"
+                          >
+                            {biz.name}
+                          </Link>
+                        </td>
                         <td className="px-5 py-3">
                           <span className="px-2 py-0.5 bg-slate-800 text-slate-300 rounded text-xs">
                             {biz.category?.replace(/_/g, ' ')}
