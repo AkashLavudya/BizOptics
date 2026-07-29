@@ -248,6 +248,9 @@ export const profileApi = {
   changePassword: (data: { currentPassword: string; newPassword: string }) =>
     api.patch('/profile/change-password', data),
   getStats: () => api.get('/profile/stats'),
+  saveApiKey: (googlePlacesApiKey: string) =>
+    api.patch('/profile/api-key', { googlePlacesApiKey }),
+  getApiKeyStatus: () => api.get('/profile/api-key/status'),
 };
 
 /* ───────── Admin ───────── */

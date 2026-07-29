@@ -12,7 +12,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { ProfileService } from './profile.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { IsOptional, IsString, MinLength, MaxLength, Matches, IsUrl } from 'class-validator';
+import { IsOptional, IsString, MinLength, MaxLength, Matches } from 'class-validator';
 import { ApiPropertyOptional, ApiProperty } from '@nestjs/swagger';
 
 class UpdateProfileDto {
@@ -52,6 +52,12 @@ class ChangePasswordDto {
   newPassword: string;
 }
 
+class SaveApiKeyDto {
+  @ApiProperty({ description: 'Google Places API key (leave empty string to remove)' })
+  @IsString()
+  googlePlacesApiKey: string;
+}
+
 @ApiTags('Profile')
 @ApiBearerAuth('JWT-auth')
 @UseGuards(JwtAuthGuard)
@@ -76,6 +82,19 @@ export class ProfileController {
   @ApiOperation({ summary: 'Change user password' })
   async changePassword(@CurrentUser() user: any, @Body() dto: ChangePasswordDto) {
     return this.profileService.changePassword(user.id, dto.currentPassword, dto.newPassword);
+  }
+
+  @Patch('api-key')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Save user Google Places API key' })
+  async saveApiKey(@CurrentUser() user: any, @Body() dto: SaveApiKeyDto) {
+    return this.profileService.saveApiKey(user.id, dto.googlePlacesApiKey);
+  }
+
+  @Get('api-key/status')
+  @ApiOperation({ summary: 'Check if user has a Google Places API key saved' })
+  async getApiKeyStatus(@CurrentUser() user: any) {
+    return this.profileService.getApiKeyStatus(user.id);
   }
 
   @Get('stats')

@@ -42,6 +42,40 @@ export class ProfileService {
     return { message: 'Password changed successfully' };
   }
 
+  async saveApiKey(userId: string, googlePlacesApiKey: string) {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { googlePlacesApiKey: googlePlacesApiKey.trim() || null },
+    });
+    return {
+      message: googlePlacesApiKey.trim()
+        ? 'API key saved successfully'
+        : 'API key removed',
+      hasKey: !!googlePlacesApiKey.trim(),
+    };
+  }
+
+  async getApiKeyStatus(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { googlePlacesApiKey: true },
+    });
+    const key = user?.googlePlacesApiKey;
+    return {
+      hasKey: !!key,
+      // Return masked version so UI can show it was set (e.g. "AIza••••••••••••Xk9r")
+      maskedKey: key ? `${key.slice(0, 6)}${'•'.repeat(20)}${key.slice(-4)}` : null,
+    };
+  }
+
+  async getApiKey(userId: string): Promise<string | null> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { googlePlacesApiKey: true },
+    });
+    return user?.googlePlacesApiKey ?? null;
+  }
+
   async getActivityStats(userId: string) {
     const [searchCount, totalBusinesses] = await Promise.all([
       this.prisma.searchHistory.count({ where: { userId } }),
