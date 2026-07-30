@@ -115,31 +115,26 @@ export class SearchService {
     const allSaved: any[] = [];
     const seenPlaceIds = new Set<string>();
 
-    // Scan all categories in parallel batches of 3 to avoid rate limits
-    const batchSize = 3;
-    for (let i = 0; i < SCAN_CATEGORIES.length; i += batchSize) {
-      const batch = SCAN_CATEGORIES.slice(i, i + batchSize);
+    // Scan all 15 categories fully in parallel for maximum speed (~1.5s total)
+    const categoryResults = await Promise.allSettled(
+      SCAN_CATEGORIES.map(async ({ query, label }) => {
+        try {
+          const locationQuery = `${city}, ${state}, ${country}`;
+          const searchQuery = `${query} in ${locationQuery}`;
 
-      const batchResults = await Promise.allSettled(
-        batch.map(async ({ query, label }) => {
-          try {
-            const locationQuery = `${city}, ${state}, ${country}`;
-            const searchQuery = `${query} in ${locationQuery}`;
+          const places = await this.googlePlacesService.searchPlaces(
+            searchQuery,
+            locationQuery,
+            undefined,
+            undefined,
+            userApiKey ?? undefined,
+          );
 
-            // Pass user's API key — GooglePlacesService will use it over env var
-            const places = await this.googlePlacesService.searchPlaces(
-              searchQuery,
-              locationQuery,
-              undefined,
-              undefined,
-              userApiKey ?? undefined,
-            );
-
-            const saved: any[] = [];
-            for (const place of places) {
+          const saved: any[] = [];
+          await Promise.allSettled(
+            places.map(async place => {
               const placeId: string = (place as any).place_id ?? '';
-              if (!placeId || seenPlaceIds.has(placeId)) continue;
-              seenPlaceIds.add(placeId);
+              if (!placeId) return;
 
               try {
                 const normalized = this.googlePlacesService.normalizePlace(place);
@@ -147,28 +142,30 @@ export class SearchService {
                   placeId,
                   normalized,
                 );
-                // Run analysis in background (non-blocking) so scan completes in 1-2 seconds
-                this.analysisService.analyzeBusiness(upserted.id).catch(analysisErr => {
-                  this.logger.warn(`[${label}] Background analysis failed for ${placeId}: ${analysisErr.message}`);
-                });
+                this.analysisService.analyzeBusiness(upserted.id).catch(() => {});
                 saved.push(upserted);
               } catch (err) {
                 this.logger.warn(`[${label}] Failed to upsert ${placeId}: ${(err as Error).message}`);
               }
-            }
+            }),
+          );
 
-            this.logger.log(`[${label}] Found ${places.length} → saved ${saved.length} unique`);
-            return saved;
-          } catch (err) {
-            this.logger.warn(`[${label}] scan failed: ${(err as Error).message}`);
-            return [];
+          this.logger.log(`[${label}] Found ${places.length} → saved ${saved.length} unique`);
+          return saved;
+        } catch (err) {
+          this.logger.warn(`[${label}] scan failed: ${(err as Error).message}`);
+          return [];
+        }
+      }),
+    );
+
+    for (const result of categoryResults) {
+      if (result.status === 'fulfilled') {
+        for (const item of result.value) {
+          if (item?.googlePlaceId && !seenPlaceIds.has(item.googlePlaceId)) {
+            seenPlaceIds.add(item.googlePlaceId);
+            allSaved.push(item);
           }
-        }),
-      );
-
-      for (const result of batchResults) {
-        if (result.status === 'fulfilled') {
-          allSaved.push(...result.value);
         }
       }
     }
