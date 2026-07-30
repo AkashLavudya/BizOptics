@@ -36,6 +36,7 @@ export interface ScanResult {
   categoriesScanned: number;
   state: string;
   savedToHistory: boolean;
+  usingRealData: boolean;
 }
 
 export interface PaginatedSearchHistory {
@@ -57,12 +58,32 @@ export class SearchService {
     private readonly analysisService: AnalysisService,
   ) {}
 
+  // ─── Fetch user's Google Places API key from DB ──────────────────────────────
+
+  private async getUserApiKey(userId: string): Promise<string | null> {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { googlePlacesApiKey: true },
+      });
+      return user?.googlePlacesApiKey ?? null;
+    } catch {
+      return null;
+    }
+  }
+
   // ─── Scan all categories for a state ────────────────────────────────────────
 
   async scan(userId: string, dto: ScanDto): Promise<ScanResult> {
     const { country = 'United States', state, city, limit = 60 } = dto;
 
-    this.logger.log(`User ${userId} scanning country="${country}" state="${state}" city="${city}" limit=${limit}`);
+    // Fetch user's API key from DB — use it for real Google Places data
+    const userApiKey = await this.getUserApiKey(userId);
+    const usingRealData = !!userApiKey;
+
+    this.logger.log(
+      `User ${userId} scanning country="${country}" state="${state}" city="${city}" limit=${limit} | API: ${usingRealData ? 'REAL (user key)' : 'MOCK'}`,
+    );
 
     const allSaved: any[] = [];
     const seenPlaceIds = new Set<string>();
@@ -77,9 +98,14 @@ export class SearchService {
           try {
             const locationQuery = `${city}, ${state}, ${country}`;
             const searchQuery = `${query} in ${locationQuery}`;
+
+            // Pass user's API key — GooglePlacesService will use it over env var
             const places = await this.googlePlacesService.searchPlaces(
               searchQuery,
               locationQuery,
+              undefined,
+              undefined,
+              userApiKey ?? undefined,
             );
 
             const saved: any[] = [];
@@ -94,7 +120,7 @@ export class SearchService {
                   placeId,
                   normalized,
                 );
-                // Automatically run analysis in mock mode (fast) so that businesses have scores immediately
+                // Automatically run analysis so that businesses have scores immediately
                 try {
                   await this.analysisService.analyzeBusiness(upserted.id);
                 } catch (analysisErr) {
@@ -146,13 +172,13 @@ export class SearchService {
       categoriesScanned: SCAN_CATEGORIES.length,
       state,
       savedToHistory,
+      usingRealData,
     };
   }
 
   // ─── Legacy search (kept for backward compat) ────────────────────────────────
 
   async search(userId: string, dto: any): Promise<any> {
-    // Route to scan if using new API, otherwise keep old behavior for backward compat
     if (dto.state) {
       return this.scan(userId, dto as ScanDto);
     }
@@ -160,7 +186,10 @@ export class SearchService {
     const { query = 'businesses', location, radius = 25000, limit = 20 } = dto;
     this.logger.log(`Legacy search: "${query}" in ${location}`);
 
-    const places = await this.googlePlacesService.searchPlaces(query, location, radius);
+    const userApiKey = await this.getUserApiKey(userId);
+    const places = await this.googlePlacesService.searchPlaces(
+      query, location, radius, undefined, userApiKey ?? undefined,
+    );
     const sliced = places.slice(0, limit);
     const savedBusinesses: any[] = [];
 

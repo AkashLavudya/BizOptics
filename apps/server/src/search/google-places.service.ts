@@ -267,11 +267,13 @@ export class GooglePlacesService {
     location?: string,
     radius?: number,
     type?: string,
+    userApiKey?: string,
   ): Promise<any[]> {
-    const apiKey = this.configService.get<string>('GOOGLE_PLACES_API_KEY', '');
+    // Prefer user's own key (from DB) over the server-wide env var
+    const apiKey = userApiKey || this.configService.get<string>('GOOGLE_PLACES_API_KEY', '');
 
     if (!apiKey) {
-      this.logger.warn('GOOGLE_PLACES_API_KEY not set — returning mock data.');
+      this.logger.warn('No API key available — returning mock data.');
       return this.getMockPlaces(query, location);
     }
 
