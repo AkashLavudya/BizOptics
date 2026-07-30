@@ -136,7 +136,7 @@ export class SearchService {
             );
 
             const saved: any[] = [];
-            for (const place of places.slice(0, Math.ceil(limit / SCAN_CATEGORIES.length) + 5)) {
+            for (const place of places) {
               const placeId: string = (place as any).place_id ?? '';
               if (!placeId || seenPlaceIds.has(placeId)) continue;
               seenPlaceIds.add(placeId);
