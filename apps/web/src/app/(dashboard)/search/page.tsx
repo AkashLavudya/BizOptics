@@ -395,10 +395,27 @@ export default function ScanPage() {
   const [stateInput, setStateInput] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [results, setResults] = useState<any[]>([]);
-  const [scanDone, setScanDone] = useState(false);
   const [usingRealData, setUsingRealData] = useState(false);
   const [analyzingId, setAnalyzingId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Restore previous scan from sessionStorage on mount
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem('bizoptics_last_scan');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed.results) && parsed.results.length > 0) {
+          setResults(parsed.results);
+          if (parsed.country) setCountry(parsed.country);
+          if (parsed.state) { setState(parsed.state); setStateInput(parsed.state); }
+          if (parsed.city) setCity(parsed.city);
+          setUsingRealData(!!parsed.usingRealData);
+          setScanDone(true);
+        }
+      }
+    } catch {}
+  }, []);
 
   // Result filters
   const [filterCategory, setFilterCategory] = useState('');
@@ -438,6 +455,15 @@ export default function ScanPage() {
       setUsingRealData(isReal);
       setResults(businesses);
       setScanDone(true);
+      try {
+        sessionStorage.setItem('bizoptics_last_scan', JSON.stringify({
+          results: businesses,
+          country,
+          state: dto.state || state || stateInput,
+          city: dto.city || city,
+          usingRealData: isReal,
+        }));
+      } catch {}
       queryClient.invalidateQueries({ queryKey: ['scan-history'] });
       queryClient.invalidateQueries({ queryKey: ['businesses'] });
       toast({

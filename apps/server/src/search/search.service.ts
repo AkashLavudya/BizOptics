@@ -147,12 +147,10 @@ export class SearchService {
                   placeId,
                   normalized,
                 );
-                // Automatically run analysis so that businesses have scores immediately
-                try {
-                  await this.analysisService.analyzeBusiness(upserted.id);
-                } catch (analysisErr) {
-                  this.logger.warn(`[${label}] Failed to auto-analyze ${placeId}: ${(analysisErr as Error).message}`);
-                }
+                // Run analysis in background (non-blocking) so scan completes in 1-2 seconds
+                this.analysisService.analyzeBusiness(upserted.id).catch(analysisErr => {
+                  this.logger.warn(`[${label}] Background analysis failed for ${placeId}: ${analysisErr.message}`);
+                });
                 saved.push(upserted);
               } catch (err) {
                 this.logger.warn(`[${label}] Failed to upsert ${placeId}: ${(err as Error).message}`);
