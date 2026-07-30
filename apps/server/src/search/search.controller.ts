@@ -58,6 +58,14 @@ export class SearchController {
     return this.searchService.search(req.user.id, body);
   }
 
+  // ─── GET /search/debug-key ────────────────────────────────────────────────
+
+  @Get('debug-key')
+  @ApiOperation({ summary: 'Debug: check if user API key is stored and readable' })
+  async debugKey(@Request() req: any) {
+    return this.searchService.debugApiKey(req.user.id);
+  }
+
   // ─── GET /search/history ──────────────────────────────────────────────────
 
   @Get('history')

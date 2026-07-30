@@ -72,6 +72,33 @@ export class SearchService {
     }
   }
 
+  async debugApiKey(userId: string) {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { googlePlacesApiKey: true },
+      });
+      const dbKey = user?.googlePlacesApiKey ?? null;
+      const envKey = process.env.GOOGLE_PLACES_API_KEY ?? null;
+      const activeKey = dbKey || envKey;
+
+      return {
+        dbKeyStored: !!dbKey,
+        dbKeyPreview: dbKey ? `${dbKey.slice(0, 8)}...${dbKey.slice(-4)}` : null,
+        envKeySet: !!envKey,
+        activeKeySource: dbKey ? 'database (user key)' : envKey ? 'environment variable' : 'none',
+        mode: activeKey ? 'REAL Google Places data' : 'MOCK data',
+        columnExists: true,
+      };
+    } catch (err) {
+      return {
+        error: (err as Error).message,
+        columnExists: false,
+        hint: 'The google_places_api_key column may not exist in the DB yet. Check if prisma db push ran successfully in the Render build logs.',
+      };
+    }
+  }
+
   // ─── Scan all categories for a state ────────────────────────────────────────
 
   async scan(userId: string, dto: ScanDto): Promise<ScanResult> {
