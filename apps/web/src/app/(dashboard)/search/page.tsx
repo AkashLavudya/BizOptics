@@ -396,6 +396,7 @@ export default function ScanPage() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [results, setResults] = useState<any[]>([]);
   const [scanDone, setScanDone] = useState(false);
+  const [usingRealData, setUsingRealData] = useState(false);
   const [analyzingId, setAnalyzingId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -431,13 +432,17 @@ export default function ScanPage() {
   const scanMutation = useMutation({
     mutationFn: (dto: any) => (searchApi as any).scan(dto),
     onSuccess: (res: any) => {
-      const businesses = res?.data?.businesses ?? res?.businesses ?? [];
+      const raw = res?.data ?? res ?? {};
+      const businesses = raw.businesses ?? [];
+      const isReal = !!raw.usingRealData;
+      setUsingRealData(isReal);
       setResults(businesses);
       setScanDone(true);
       queryClient.invalidateQueries({ queryKey: ['scan-history'] });
       queryClient.invalidateQueries({ queryKey: ['businesses'] });
       toast({
         title: `Scan complete — ${businesses.length} businesses found`,
+        description: isReal ? '🟢 Using Live Google Places API Data' : '🟡 Using Demo Data (No API key set or fallback)',
         variant: 'success' as any,
       });
     },
@@ -671,12 +676,21 @@ export default function ScanPage() {
           ) : results.length > 0 ? (
             <>
               {/* Results header */}
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-slate-400">
-                  <Building2 className="w-4 h-4 inline mr-1 text-slate-500" />
-                  <span className="text-white font-medium">{filteredResults.length}</span>
-                  {filteredResults.length !== results.length && <span className="text-slate-500"> of {results.length}</span>} businesses in <span className="text-white font-medium">{state || stateInput}</span>
-                </p>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-sm text-slate-400">
+                    <Building2 className="w-4 h-4 inline mr-1 text-slate-500" />
+                    <span className="text-white font-medium">{filteredResults.length}</span>
+                    {filteredResults.length !== results.length && <span className="text-slate-500"> of {results.length}</span>} businesses in <span className="text-white font-medium">{state || stateInput}</span>
+                  </p>
+                  <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium border ${
+                    usingRealData
+                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                      : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                  }`}>
+                    {usingRealData ? '🟢 Live Google Places API' : '🟡 Demo Data Mode'}
+                  </span>
+                </div>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => exportMutation.mutate(filteredResults.map((b: any) => b.id).filter(Boolean))}

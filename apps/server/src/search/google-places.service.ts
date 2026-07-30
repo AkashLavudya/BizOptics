@@ -290,10 +290,12 @@ export class GooglePlacesService {
         this.httpService.get(this.TEXT_SEARCH_URL, { params }),
       );
 
-      const { status, results } = response.data;
+      const { status, results, error_message } = response.data;
 
       if (status !== 'OK' && status !== 'ZERO_RESULTS') {
-        this.logger.error(`Google Places Text Search error: ${status}`);
+        this.logger.error(
+          `Google Places Text Search error status="${status}": ${error_message || 'Check GCP API Key restrictions and Places API activation'}`,
+        );
         return this.getMockPlaces(query);
       }
 
