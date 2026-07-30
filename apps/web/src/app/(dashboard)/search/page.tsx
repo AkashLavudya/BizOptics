@@ -424,34 +424,7 @@ export default function ScanPage() {
 
   const RESULT_CATEGORIES = [...new Set(results.map((b: any) => b.category).filter(Boolean))];
 
-  // Fallback query: if results state is empty, fetch recent scanned businesses from DB
-  const { data: recentBizData } = useQuery<any>({
-    queryKey: ['recent-scanned-businesses'],
-    queryFn: () => businessApi.getAll({ limit: 100, sortBy: 'createdAt', sortOrder: 'desc' }),
-    enabled: results.length === 0,
-  });
 
-  useEffect(() => {
-    if (results.length === 0 && recentBizData) {
-      const list = Array.isArray(recentBizData?.data?.data)
-        ? recentBizData.data.data
-        : Array.isArray(recentBizData?.data?.businesses)
-        ? recentBizData.data.businesses
-        : Array.isArray(recentBizData?.data)
-        ? recentBizData.data
-        : [];
-      if (list.length > 0) {
-        const first = list[0];
-        setScanResults({
-          results: list,
-          country: first.country || 'United States',
-          state: first.state || '',
-          city: first.city || '',
-          usingRealData: false,
-        });
-      }
-    }
-  }, [recentBizData, results.length, setScanResults]);
 
   const { data: historyData } = useQuery<any>({
     queryKey: ['scan-history'],
