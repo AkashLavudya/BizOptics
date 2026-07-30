@@ -8,6 +8,8 @@ import {
   Phone, Building2, Loader2, ChevronRight, Zap, BarChart3, AlertCircle,
   Search, Filter, Download
 } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { timeAgo, downloadBlob } from '@/lib/utils';
@@ -227,7 +229,12 @@ function BusinessCard({ biz, onAnalyze, analyzing }: { biz: any; onAnalyze: () =
         {/* Name + score */}
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-white text-sm leading-tight line-clamp-1">{biz.name}</h3>
+            <Link
+              href={`/businesses/${biz.id}`}
+              className="font-semibold text-white text-sm leading-tight line-clamp-1 hover:text-indigo-300 transition-colors"
+            >
+              {biz.name}
+            </Link>
             <p className="text-slate-500 text-xs mt-0.5 flex items-center gap-1">
               <MapPin className="w-3 h-3 shrink-0" />
               <span className="truncate">{biz.address ? `${biz.address}` : `${biz.city}${biz.state ? `, ${biz.state}` : ''}`}</span>
@@ -358,15 +365,22 @@ function BusinessCard({ biz, onAnalyze, analyzing }: { biz: any; onAnalyze: () =
         </div>
       )}
 
-      {/* ── Analyze button ── */}
-      <div className="px-5 pb-5 mt-auto">
+      {/* ── Analyze + View buttons ── */}
+      <div className="px-5 pb-5 mt-auto flex gap-2">
+        <Link
+          href={`/businesses/${biz.id}`}
+          className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-slate-800/60 border border-slate-700/50 text-slate-300 hover:bg-slate-700/60 hover:text-white text-xs font-medium transition-all"
+        >
+          <ChevronRight className="w-3 h-3" />
+          View Details
+        </Link>
         <button
           onClick={onAnalyze}
           disabled={analyzing || !biz.id}
-          className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-600/20 hover:border-indigo-500/40 text-xs font-medium transition-all disabled:opacity-50"
+          className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-600/20 hover:border-indigo-500/40 text-xs font-medium transition-all disabled:opacity-50"
         >
           {analyzing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
-          {analyzing ? 'Analyzing…' : 'Analyze Opportunity'}
+          {analyzing ? 'Analyzing…' : 'Analyze'}
         </button>
       </div>
     </div>
@@ -442,10 +456,15 @@ export default function ScanPage() {
       setAnalyzingId(id);
       return businessApi.analyze(id);
     },
-    onSuccess: () => {
+    onSuccess: (_, id) => {
       setAnalyzingId(null);
-      toast({ title: 'Analysis started!', variant: 'success' as any });
       queryClient.invalidateQueries({ queryKey: ['businesses'] });
+      queryClient.invalidateQueries({ queryKey: ['recommendations-businesses'] });
+      toast({
+        title: '✅ Analysis complete!',
+        description: 'Recommendations are ready — check the Recommendations tab.',
+        variant: 'success' as any,
+      });
     },
     onError: () => {
       setAnalyzingId(null);
