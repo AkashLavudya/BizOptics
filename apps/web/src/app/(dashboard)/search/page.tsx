@@ -395,6 +395,7 @@ export default function ScanPage() {
   const [stateInput, setStateInput] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [results, setResults] = useState<any[]>([]);
+  const [scanDone, setScanDone] = useState(false);
   const [usingRealData, setUsingRealData] = useState(false);
   const [analyzingId, setAnalyzingId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
