@@ -392,12 +392,14 @@ export default function ScanPage() {
   const queryClient = useQueryClient();
   const {
     country, state, city, stateInput, results, scanDone, usingRealData,
-    setScanResults, setLocation, setScanDone,
+    setScanResults, setLocation, setCountry, setStateInput, setCity, setScanDone,
   } = useScanStore();
 
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [analyzingId, setAnalyzingId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const effectiveState = state || stateInput;
 
   // Result filters
   const [filterCategory, setFilterCategory] = useState('');
@@ -529,7 +531,7 @@ export default function ScanPage() {
   });
 
   const handleScan = () => {
-    const target = state || stateInput;
+    const target = effectiveState;
     if (!target.trim()) {
       toast({ title: 'Select a state to scan', variant: 'destructive' });
       return;
@@ -640,11 +642,11 @@ export default function ScanPage() {
             <select
               value={city}
               onChange={e => setCity(e.target.value)}
-              disabled={isScanning || !state}
+              disabled={isScanning || !effectiveState}
               className="w-full px-3 py-3 bg-slate-800 border border-slate-700 rounded-xl text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
             >
-              <option value="">{state ? 'Select City' : 'Select State First'}</option>
-              {(state ? CITIES_BY_STATE[state] ?? [] : []).map(c => (
+              <option value="">{effectiveState ? 'Select City' : 'Select State First'}</option>
+              {(effectiveState ? CITIES_BY_STATE[effectiveState] ?? [] : []).map(c => (
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
