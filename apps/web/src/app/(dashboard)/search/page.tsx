@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useScanStore } from '@/store/scan.store';
 import { toast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { timeAgo, downloadBlob } from '@/lib/utils';
@@ -389,34 +390,14 @@ function BusinessCard({ biz, onAnalyze, analyzing }: { biz: any; onAnalyze: () =
 
 export default function ScanPage() {
   const queryClient = useQueryClient();
-  const [country, setCountry] = useState('United States');
-  const [state, setState] = useState('');
-  const [city, setCity] = useState('');
-  const [stateInput, setStateInput] = useState('');
+  const {
+    country, state, city, stateInput, results, scanDone, usingRealData,
+    setScanResults, setLocation, setScanDone,
+  } = useScanStore();
+
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [results, setResults] = useState<any[]>([]);
-  const [scanDone, setScanDone] = useState(false);
-  const [usingRealData, setUsingRealData] = useState(false);
   const [analyzingId, setAnalyzingId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  // Restore previous scan from sessionStorage on mount
-  useEffect(() => {
-    try {
-      const saved = sessionStorage.getItem('bizoptics_last_scan');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed.results) && parsed.results.length > 0) {
-          setResults(parsed.results);
-          if (parsed.country) setCountry(parsed.country);
-          if (parsed.state) { setState(parsed.state); setStateInput(parsed.state); }
-          if (parsed.city) setCity(parsed.city);
-          setUsingRealData(!!parsed.usingRealData);
-          setScanDone(true);
-        }
-      }
-    } catch {}
-  }, []);
 
   // Result filters
   const [filterCategory, setFilterCategory] = useState('');
@@ -444,24 +425,31 @@ export default function ScanPage() {
   // Fallback query: if results state is empty, fetch recent scanned businesses from DB
   const { data: recentBizData } = useQuery<any>({
     queryKey: ['recent-scanned-businesses'],
-    queryFn: () => businessApi.getAll({ limit: 60, sortBy: 'createdAt', sortOrder: 'desc' }),
+    queryFn: () => businessApi.getAll({ limit: 100, sortBy: 'createdAt', sortOrder: 'desc' }),
     enabled: results.length === 0,
   });
 
   useEffect(() => {
     if (results.length === 0 && recentBizData) {
-      const list = Array.isArray(recentBizData?.data?.data) ? recentBizData.data.data : [];
+      const list = Array.isArray(recentBizData?.data?.data)
+        ? recentBizData.data.data
+        : Array.isArray(recentBizData?.data?.businesses)
+        ? recentBizData.data.businesses
+        : Array.isArray(recentBizData?.data)
+        ? recentBizData.data
+        : [];
       if (list.length > 0) {
-        setResults(list);
-        setScanDone(true);
-        if (list[0]?.state) {
-          setState(list[0].state);
-          setStateInput(list[0].state);
-        }
-        if (list[0]?.city) setCity(list[0].city);
+        const first = list[0];
+        setScanResults({
+          results: list,
+          country: first.country || 'United States',
+          state: first.state || '',
+          city: first.city || '',
+          usingRealData: false,
+        });
       }
     }
-  }, [recentBizData, results.length]);
+  }, [recentBizData, results.length, setScanResults]);
 
   const { data: historyData } = useQuery<any>({
     queryKey: ['scan-history'],
@@ -475,20 +463,16 @@ export default function ScanPage() {
       const raw = res?.data ?? res ?? {};
       const businesses = raw.businesses ?? [];
       const isReal = !!raw.usingRealData;
-      setUsingRealData(isReal);
-      setResults(businesses);
-      setScanDone(true);
-      try {
-        sessionStorage.setItem('bizoptics_last_scan', JSON.stringify({
-          results: businesses,
-          country,
-          state: dto.state || state || stateInput,
-          city: dto.city || city,
-          usingRealData: isReal,
-        }));
-      } catch {}
+      setScanResults({
+        results: businesses,
+        country,
+        state: dto.state || state || stateInput,
+        city: dto.city || city,
+        usingRealData: isReal,
+      });
       queryClient.invalidateQueries({ queryKey: ['scan-history'] });
       queryClient.invalidateQueries({ queryKey: ['businesses'] });
+      queryClient.invalidateQueries({ queryKey: ['recent-scanned-businesses'] });
       toast({
         title: `Scan complete — ${businesses.length} businesses found`,
         description: isReal ? '🟢 Using Live Google Places API Data' : '🟡 Using Demo Data (No API key set or fallback)',
@@ -555,14 +539,11 @@ export default function ScanPage() {
       return;
     }
     setScanDone(false);
-    setResults([]);
     scanMutation.mutate({ country, state: target.trim(), city, limit: 60 });
   };
 
   const selectState = (s: string) => {
-    setState(s);
-    setStateInput(s);
-    setCity(''); // Clear city selection when state changes
+    setLocation(country, s, '');
     setShowSuggestions(false);
     inputRef.current?.blur();
   };
@@ -867,26 +848,49 @@ export default function ScanPage() {
                   <div
                     key={h.id}
                     className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-800/50 group transition-colors cursor-pointer"
-                    onClick={() => {
+                    onClick={async () => {
                       const loc = h.location ?? h.query?.replace('Scan: ', '') ?? '';
                       if (loc) {
                         const parts = loc.split(',').map((p: string) => p.trim());
+                        let targetCity = '';
+                        let targetState = '';
+                        let targetCountry = 'United States';
                         if (parts.length >= 3) {
-                          setCountry(parts[2]);
-                          setCity(parts[0]);
-                          setState(parts[1]);
-                          setStateInput(parts[1]);
+                          targetCity = parts[0];
+                          targetState = parts[1];
+                          targetCountry = parts[2];
                         } else if (parts.length === 2) {
-                          setCountry('United States');
-                          setCity(parts[0]);
-                          setState(parts[1]);
-                          setStateInput(parts[1]);
+                          targetCity = parts[0];
+                          targetState = parts[1];
                         } else {
-                          setCountry('United States');
-                          setState(loc);
-                          setStateInput(loc);
-                          setCity('');
+                          targetState = loc;
                         }
+                        setLocation(targetCountry, targetState, targetCity);
+
+                        // Load businesses from DB for this historical location
+                        try {
+                          const res: any = await businessApi.getAll({
+                            state: targetState,
+                            city: targetCity || undefined,
+                            limit: 100,
+                          });
+                          const list = Array.isArray(res?.data?.data)
+                            ? res.data.data
+                            : Array.isArray(res?.data?.businesses)
+                            ? res.data.businesses
+                            : Array.isArray(res?.data)
+                            ? res.data
+                            : [];
+                          if (list.length > 0) {
+                            setScanResults({
+                              results: list,
+                              country: targetCountry,
+                              state: targetState,
+                              city: targetCity,
+                              usingRealData: false,
+                            });
+                          }
+                        } catch {}
                       }
                     }}
                   >
