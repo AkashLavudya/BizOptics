@@ -285,12 +285,15 @@ export class GooglePlacesService {
     if (radius) params['radius'] = String(radius);
     if (type) params['type'] = type;
 
+    const allResults: any[] = [];
+
     try {
+      // ── Page 1 ────────────────────────────────────────────────────────────
       const response = await firstValueFrom(
         this.httpService.get(this.TEXT_SEARCH_URL, { params }),
       );
 
-      const { status, results, error_message } = response.data;
+      const { status, results, error_message, next_page_token } = response.data;
 
       if (status !== 'OK' && status !== 'ZERO_RESULTS') {
         this.logger.error(
@@ -299,7 +302,48 @@ export class GooglePlacesService {
         return this.getMockPlaces(query);
       }
 
-      return results ?? [];
+      allResults.push(...(results ?? []));
+      this.logger.log(`[Page 1] ${allResults.length} results for "${query}"`);
+
+      // ── Pages 2 & 3 using next_page_token ────────────────────────────────
+      // Google requires a short delay (~2s) before the token becomes valid.
+      let pageToken: string | undefined = next_page_token;
+      let pageNum = 2;
+
+      while (pageToken && pageNum <= 3) {
+        // Google mandates a short delay before the next_page_token is usable
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        try {
+          const pageResponse = await firstValueFrom(
+            this.httpService.get(this.TEXT_SEARCH_URL, {
+              params: { pagetoken: pageToken, key: apiKey },
+            }),
+          );
+
+          const {
+            status: pageStatus,
+            results: pageResults,
+            next_page_token: nextToken,
+          } = pageResponse.data;
+
+          if (pageStatus === 'OK') {
+            allResults.push(...(pageResults ?? []));
+            this.logger.log(`[Page ${pageNum}] +${(pageResults ?? []).length} results → total ${allResults.length}`);
+            pageToken = nextToken;
+          } else {
+            this.logger.warn(`[Page ${pageNum}] status="${pageStatus}" — stopping pagination`);
+            break;
+          }
+        } catch (pageErr) {
+          this.logger.warn(`[Page ${pageNum}] fetch error: ${(pageErr as Error).message}`);
+          break;
+        }
+
+        pageNum++;
+      }
+
+      return allResults;
     } catch (err) {
       const axiosErr = err as AxiosError;
       this.logger.error(
@@ -309,6 +353,7 @@ export class GooglePlacesService {
       return this.getMockPlaces(query);
     }
   }
+
 
   // ─── Place Details ─────────────────────────────────────────────────────────
 
