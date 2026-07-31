@@ -554,12 +554,7 @@ export default function ScanPage() {
             <label className="block text-xs font-medium text-slate-400 mb-1.5">Target Country</label>
             <select
               value={country}
-              onChange={e => {
-                setCountry(e.target.value);
-                setState('');
-                setStateInput('');
-                setCity('');
-              }}
+              onChange={e => setCountry(e.target.value)}
               disabled={isScanning}
               className="w-full px-3 py-3 bg-slate-800 border border-slate-700 rounded-xl text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
             >
