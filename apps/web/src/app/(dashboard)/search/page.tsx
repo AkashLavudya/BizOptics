@@ -574,7 +574,6 @@ export default function ScanPage() {
                 value={stateInput}
                 onChange={e => {
                   setStateInput(e.target.value);
-                  setState('');
                   setShowSuggestions(true);
                 }}
                 onFocus={() => setShowSuggestions(true)}
