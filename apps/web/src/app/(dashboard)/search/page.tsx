@@ -434,15 +434,15 @@ export default function ScanPage() {
 
   const scanMutation = useMutation({
     mutationFn: (dto: any) => (searchApi as any).scan(dto),
-    onSuccess: (res: any) => {
+    onSuccess: (res: any, dto: any) => {
       const raw = res?.data ?? res ?? {};
       const businesses = raw.businesses ?? [];
       const isReal = !!raw.usingRealData;
       setScanResults({
         results: businesses,
         country,
-        state: dto.state || state || stateInput,
-        city: dto.city || city,
+        state: dto?.state || state || stateInput,
+        city: dto?.city || city,
         usingRealData: isReal,
       });
       queryClient.invalidateQueries({ queryKey: ['scan-history'] });
